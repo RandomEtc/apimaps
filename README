@@ -1,0 +1,5 @@
+This is the code that powers http://guardian.apimaps.org/
+
+It keeps associations between Guardian article IDs and Yahoo GeoPlanet IDs.
+
+There's some hairy javascript and some hairy php here. It was made by Stamen Design.
