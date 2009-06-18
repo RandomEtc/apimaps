@@ -1,4 +1,4 @@
-This is the code that powers http://guardian.apimaps.org/
+This is the BSD-licensed code that powers http://guardian.apimaps.org/
 
 It keeps associations between Guardian article IDs and Yahoo GeoPlanet IDs.
 
