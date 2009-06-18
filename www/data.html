@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+    "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+    <head>
+        <title>Guardian API Maps - Feeds, Data, API and Sourcecode</title>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+        <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.7.0/build/reset/reset-min.css">
+        <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.7.0/build/fonts/fonts-min.css">
+        <link href="css/style.css" rel="stylesheet" type="text/css">
+    </head>
+    <body>
+        <div id="header">
+            <h1><a href="index.html">API Maps</a></h1>
+            <p>Putting the Guardian API on the Map</p>
+            <ul>
+                <li><a href="index.html">About</a></li>
+                <li><a href="search.html">Search</a></li>
+                <li><a href="map.html">Map</a></li>
+                <li><a href="data.html">Data</a></li>
+            </ul>
+        </div>
+        <div id="search">
+            <h2>Data</h2>
+            <form id="articleform" method="get" action="search.html">
+                <label for="q">Search News Articles: </label>
+                <input type="text" id="q" name="q"></input>
+                <input type="submit" value="Go!"></input>
+            </form>
+        </div>
+        <div id="content">
+
+            <h2>Feeds</h2>
+            <p>You can subscribe to these feeds or use them to plot data on a map, 
+               e.g. with the Cloudmade Webmaps Lite API or the Google Maps API.</p>
+            <ul>
+                <!-- TODO -->
+                <li><a href="points.php?format=rss">(Geo) RSS for most recent geocodes</a></li>
+                <li><a href="points.php?woe=2457170&format=rss">(Geo) RSS for woe id 338373510 (Nashville)</a></li>
+            </ul>
+
+            <!-- <h2>Data Download</h2> -->
+            <!-- TODO -->
+            <!-- <p><a href="#">Download a data dump</a> of all the places and articles we know about.</p> -->
+
+            <h2>Sourcecode</h2>
+            <p><a href="guardian-apimaps.tar.gz">Download an archive</a> of all the source code that drives this site.</p>            
+
+            <h2>Points API</h2>
+            <p>If you're using the Guardian API and want to know what we know about article
+               locations, feel free to make a call to 
+               <a href="points.php">points.php</a> to ask us.</p>
+
+            <h3>Parameters</h3>
+            <dl>
+                <dt><tt>article</tt></dt>
+                <dd>Guardian article id.</dd>
+                
+                <dt><tt>articles</tt></dt>
+                <dd>Optional comma-separated list of Guardian article ids.</dd>
+
+                <dt><tt>woe</tt></dt>
+                <dd>Optional comma-separated list of Yahoo Where-on-Earth (WOE) ids 
+                    (from <a href="http://developer.yahoo.com/geo/">Yahoo GeoPlanet</a>, as used by Flickr, Upcoming, FireEagle, etc.)</dd>
+
+                <dt><tt>woes</tt></dt>
+                <dd>Optional comma-separated list of Yahoo Where-on-Earth (WOE) ids</dd>
+        
+                <dt><tt>format</tt></dt>
+                <!-- TODO -->
+                <dd><i>html</i> (default), <i>json</i>, <i>js</i> (jsonp, for use with a callback), <i>rss</i> (with georss), <i>php</i> (serialized PHP)</dd>
+
+                <dt><tt>count</tt></dt>
+                <dd>Optional number of collections to return, default: <i>10</i></dd>
+        
+                <dt><tt>offset</tt></dt>
+                <dd>Optional starting offset in list of collections, default: <i>0</i></dd>
+            </dl>
+            
+            <h3>Examples</h3>
+            <ul>
+                <li><a href="points.php?format=js&callback=addExistingPlaces">JS with callback for most recent geocodes</a></li>
+                <li><a href="points.php?article=338373510&format=js&callback=addExistingPlaces">JS with callback for article 338373510</a></li>
+                <li><a href="points.php?woe=2457170&format=js&callback=addExistingPlaces">JS with callback for woe id 338373510 (Nashville)</a></li>
+            </ul>
+            
+            <h3>Responses</h3>
+            <h4>JS with Callback</h4>
+            <pre>
+            
+addExistingPlaces(
+  [
+    {
+      "article_id": 338373510,
+      "woe_id": 2457170,
+      "latitude": "36.167",
+      "longitude": "-86.778",
+      "place_id": "SiVf._mbBZnlkED4",
+      "place_path": "\/United+States\/Tennessee\/Nashville",
+      "place_type": "locality",
+      "place_name": "Nashville, Tennessee, United States",
+      "created": "2009-03-04 12:24:01",
+      "article": {
+        "id": 338373510,
+        "title": "Liveblogging the Obama-McCain town hall debate",
+        "published": "2008-10-08",
+        "url": "http:\/\/www.guardian.co.uk\/world\/oliverburkemanblog\/2008\/oct\/07\/uselections2008.barackobama1"
+      }
+    }
+  ]
+)
+            </pre>
+        </div>
+        <div id="footer">
+            <p><img src="images/theguardian_colour.gif">News articles by <a href="http://www.guardian.co.uk">The Guardian</a>.
+            <br>Maps &copy 2009 <a href="http://www.cloudmade.com">CloudMade</a>, map data <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a> <a href="http://www.openstreetmap.org">OpenStreetMap.org</a> contributors.
+            <br>Place searching by <a href="http://www.flickr.com">Flickr</a>.               
+                Font reset by <a href="http://developer.yahoo.com/yui/fonts/">YUI</a>. 
+                Cheerleading by <a href="http://www.asklater.com/steve">SteveC</a>. 
+            <br>Design and code by <a href="http://www.stamen.com">Stamen Design</a>.</p>
+        </div>
+    </body>
+</html>

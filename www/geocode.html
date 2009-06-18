@@ -1,0 +1,346 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+    "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+    <head>
+        <title>Guardian API Maps - Geocode an Article</title>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+        <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.7.0/build/reset/reset-min.css">
+        <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.7.0/build/fonts/fonts-min.css">
+        <link href="css/style.css" rel="stylesheet" type="text/css">
+        <script type="text/javascript" src="http://tile.cloudmade.com/wml/0.2/web-maps-lite.js"></script>
+        <script type="text/javascript" src="js/utils.js"></script>
+        <script type="text/javascript" src="js/guardian.js"></script>
+        <script type="text/javascript" src="js/apimaps.js"></script>
+        <script type="text/javascript" src="js/flickr.js"></script>
+        <script type="text/javascript" src="js/mapbits.js"></script>
+        <script type="text/javascript">
+            
+            var contentMapper = new APIMaps();
+            var guardianAPI = new GuardianAPI('http://api.guardianapis.com', 
+                                              'unh8vkqcmsxdyjrv886pb2md');
+            
+            var currentArticleId;
+            var formCount = 0; // so our forms can have unique ids
+
+            function getNiceDOMBlobForArticle(result) {
+
+                var template = '<h2>{headline}<\/h2>' +
+                               '<h3>{trailText}<\/h3>' +
+                               '<p class="byline">{byline}<\/p>' +
+                               '<p class="date"><a href="{webUrl}">{publication}<\/a>, {prettyDate}<\/p>';
+                
+                // add this to result so that we can loop, below
+                result['prettyDate'] = getPrettyDate( parseDate( result["publicationDate"] ) );
+
+                // TODO: loop for this
+                template = template.replace(/\{headline\}/, result['headline']);
+                template = template.replace(/\{trailText\}/, result['trailText']);
+                template = template.replace(/\{prettyDate\}/, result['prettyDate']);
+                template = template.replace(/\{id\}/, result['id']);
+                template = template.replace(/\{byline\}/, result['byline']);
+                template = template.replace(/\{publication\}/, result['publication']);
+                template = template.replace(/\{webUrl\}/, result['webUrl']);
+                
+                var div = document.createElement('div');
+                div.innerHTML = template;                
+
+                if (result['tags']) {
+                    var tags = result['tags'];
+                    var filters = [];
+                    for (var i = 0; i < tags.length; i++) {
+                        var tag = tags[i];
+                        filters.push('<a href="search.html?filter=' + tag.filter + '">'+tag.name+'<\/a>');
+                    }
+                    if (filters.length > 0) {
+                        var p = document.createElement('p');
+                        p.className = 'tags';
+                        p.innerHTML = '<b>Filters:<\/b> ' + filters.join(', ');
+                        div.appendChild(p);
+                    }
+                }                
+
+                if (result['typeSpecific'] && result['typeSpecific']['body']) {
+                    var p2 = document.createElement('p');
+                    p2.innerHTML = result['typeSpecific']['body'];
+                    p2.className = "body";
+                    div.appendChild(p2);
+                }
+                
+                return div;
+            }
+            
+            function jsonFlickrApi(rsp) {
+                if (rsp && rsp.places && rsp.places.place) {
+                
+                    var placeList = rsp.places.place;
+
+                    // it must be the last one, because we disable them as we go...
+                    var forms = document.getElementById('places').getElementsByTagName('form');
+                    var form = forms[forms.length-1];
+
+                    // remove the loading graphic
+                    var img = form.getElementsByTagName('img')[0];
+                    form.removeChild(img);
+
+                    if (placeList.length > 0) {
+
+                        var place = placeList[0];
+    
+                        addMarkerForPlace(place._content, place.woeid, place.latitude, place.longitude);
+
+                        showAllMarkers();
+
+                        if (place.woeid) {
+                            // TODO: onFail?
+                            contentMapper.addLocationToArticle(currentArticleId, place.woeid, onLocationPostSuccess);
+                        }
+                        else {
+                            // TODO: big bad error?
+                            showDebugMessage("no woeid for place " + place._content);
+                        }
+
+                        // display the best match
+                        var p = getDOMLineFor(currentArticleId, place._content, place.woeid);
+                        form.parentNode.insertBefore(p, form);
+                        form.parentNode.removeChild(form);
+                        
+                        // TODO: show a select for the other options in place list, 
+                        // (probably have to... or just make people be more specific, search again?)  
+                        
+                        // add a new form
+                        var places = document.getElementById('places');
+                        places.appendChild(getPlaceForm(currentArticleId));
+                        // TODO: focus the new form?                        
+                    }
+                    else {
+                        // restore functionality and try again
+                        form.onsubmit = addPlace;
+                        
+                        // TODO: display some sort of message saying what happened
+                    }
+                    
+                }
+            }
+            
+            function getDOMLineFor(articleId, placeName, woeid) {
+
+                var p = document.createElement('p');
+                
+                var marker = document.createElement('img');
+                marker.src = 'images/marker.png';
+                p.appendChild(marker);
+
+                p.appendChild(document.createTextNode(placeName + ' '));
+                
+                var a = document.createElement('a');
+                a.appendChild(document.createTextNode('[remove]'));
+                a.href = '#';
+                a.onclick = function() {
+                    a.onclick = function() { return false; };
+                    p.removeChild(a);
+                    var img = document.createElement('img');
+                    img.src = 'images/2.gif';
+                    p.appendChild(img);
+                    // TODO: onFail?
+                    contentMapper.removeLocationFromArticle(articleId, woeid, function(req) {
+                        removeMarkerForWoeId(woeid);
+                        showAllMarkers();
+                        showDebugMessage(req.responseText);
+                        p.parentNode.removeChild(p);
+                    });                            
+                    return false;
+                };
+                p.appendChild(a);
+                
+                return p;
+            }
+            
+            function onLocationPostSuccess(req) {
+                showDebugMessage(req.responseText);
+            }
+            
+            function getPlaceForm(articleId) {
+
+                formCount++;
+
+                var form = document.createElement('form');
+                form.setAttribute('id', 'place-form-'+articleId+'-'+formCount);
+                form.onsubmit = addPlace;
+
+                var input = document.createElement('input');
+                input.setAttribute('type', 'text');
+                input.setAttribute('name', 'query');
+                form.appendChild(input);
+
+                var submit = document.createElement('input');
+                submit.setAttribute('type', 'submit');
+                submit.setAttribute('value', 'Add Place');
+                form.appendChild(submit);
+
+                var hidden = document.createElement('input');
+                hidden.setAttribute('type', 'hidden');
+                hidden.setAttribute('name', 'id');
+                hidden.setAttribute('value', articleId);
+                form.appendChild(hidden);
+
+                var p = document.createElement('p');
+                p.appendChild(document.createTextNode('e.g. '));
+                var em = document.createElement('em');
+                em.appendChild(document.createTextNode('Paris, France'));
+                p.appendChild(em);
+                p.className = 'example';
+                form.appendChild(p);
+                    
+                return form;
+            }
+            
+            function addPlace(e) {
+                if (!e) var e = window.event;
+
+                var form = e.srcElement || e.target;
+
+                if (form.elements[0].value) {
+
+                    // TODO: maybe we don't want the default callback name, can Flickr do that?
+                    var url = getFlickrPlaceFindURL(form.elements[0].value);
+
+                    // add loading graphic next to this form
+                    var img = document.createElement('img');
+                    img.src = 'images/2.gif';
+                    form.appendChild(img);
+
+                    // disable the form
+                    form.onsubmit = function () { return false; };                    
+                    
+                    // await further instructions (see jsonFlickrApi)
+                    doTheJSON(url);
+                }
+                
+                return false;
+            }
+
+            function processArticleContent(response) {
+                if (response && response.content) {
+                
+                    var content = response.content;
+                
+                    // TODO: error if content.id != currentArticleId?
+                
+                    var article = document.getElementById('article');
+                    article.appendChild(getNiceDOMBlobForArticle(content));
+
+                    document.getElementById('map-container').style.display = 'block';
+                                    
+                    initMap();
+
+                    var places = document.getElementById('places');
+                    var img = document.createElement('img');
+                    img.src = 'images/6.gif';
+                    places.appendChild(img);
+                    
+                    // ask points.php what places we already have
+                    var url = contentMapper.getPlaceSearchURL(currentArticleId, 'addExistingPlaces');
+                    doTheJSON(url);
+                    
+                    document.getElementById("loading").style.display = 'none';
+                }
+                else {
+                    showDebugMessage('no response for article');
+                }
+            }
+            
+            function addExistingPlaces(response) {
+
+                var places = document.getElementById('places');
+                
+                places.removeChild(places.getElementsByTagName('img')[0]);
+            
+                if (response && response.points) {
+                    var placeList = response.points;
+                    for (var i = 0; i < placeList.length; i++) {
+                        var place = placeList[i];
+
+                        var p = getDOMLineFor(place.article_id, place.place_name, place.woe_id);
+                        places.appendChild(p);
+                        
+                        addMarkerForPlace(place.place_name, place.woe_id, parseFloat(place.latitude), parseFloat(place.longitude));
+                    }
+                    showAllMarkers();                    
+                }
+
+                var form = getPlaceForm(currentArticleId);
+                places.appendChild(form);
+                form.elements[0].focus();
+            }
+
+            function showDebugMessage(s) {
+                var debug = document.getElementById('debug');
+                var p = document.createElement('p');
+                p.appendChild(document.createTextNode(s));
+                debug.appendChild(p);
+            }
+
+            function init() {
+                currentArticleId = getRequestParameter('id');
+                if (currentArticleId && currentArticleId.length > 0) {
+                    document.getElementById("loading").style.display = 'block';                    
+                    doTheJSON(guardianAPI.getAPIContentURL(currentArticleId, { callback: 'processArticleContent' }));
+                }                
+                else {
+                    showDebugMessage('no id found, type a query above to begin');
+                }
+            }
+            
+            window.onload = init;
+            
+        </script>
+    </head>
+    <body>
+        <div id="header">
+            <h1><a href="index.html">API Maps</a></h1>
+            <p>Putting the Guardian API on the Map</p>
+            <ul>
+                <li><a href="index.html">About</a></li>
+                <li><a href="search.html">Search</a></li>
+                <li><a href="map.html">Map</a></li>
+                <li><a href="data.html">Data</a></li>
+            </ul>
+        </div>
+        <div id="search">
+            <h2>Geocoder</h2>        
+            <form id="articleform" method="get" action="search.html">
+                <label for="q">Search News Articles: </label>
+                <input type="text" id="q" name="q"></input>
+                <input type="submit" value="Go!"></input>
+            </form>
+        </div>
+        <div id="debug">
+            <p>(debug info goes here)</p>
+        </div>        
+        <div id="loading">
+            <!-- bunnies! http://mike.teczno.com/notes/bunnies.html -->
+            <p>Loading...<br><img src="images/6.gif"></p>
+        </div>        
+        <div id="article-container">
+            <div id="map-container">
+                <div id="map">
+                    <!-- CloudMade's javascript vomits into this bucket -->
+                </div>
+                <div id="places">
+                    <h2>Add or remove places for this article:</h2>
+                </div>
+            </div>
+            <div id="article">
+                <!-- our javascript vomits into this bucket -->
+            </div>
+        </div>
+        <div id="footer">
+            <p><img src="images/theguardian_colour.gif">News articles by <a href="http://www.guardian.co.uk">The Guardian</a>.
+            <br>Maps &copy 2009 <a href="http://www.cloudmade.com">CloudMade</a>, map data <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a> <a href="http://www.openstreetmap.org">OpenStreetMap.org</a> contributors.
+            <br>Place searching by <a href="http://www.flickr.com">Flickr</a>.               
+                Font reset by <a href="http://developer.yahoo.com/yui/fonts/">YUI</a>. 
+                Cheerleading by <a href="http://www.asklater.com/steve">SteveC</a>. 
+            <br>Design and code by <a href="http://www.stamen.com">Stamen Design</a>.</p>
+        </div>
+    </body>
+</html>

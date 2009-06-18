@@ -1,0 +1,237 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+    "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+    <head>
+        <title>Guardian API Maps - Find Articles to Geocode</title>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+        <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.7.0/build/reset/reset-min.css">
+        <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.7.0/build/fonts/fonts-min.css">
+        <link href="css/style.css" rel="stylesheet" type="text/css">
+        <script type="text/javascript" src="js/utils.js"></script>
+        <script type="text/javascript" src="js/guardian.js"></script>
+        <script type="text/javascript" src="js/apimaps.js"></script>
+        <script type="text/javascript" src="js/pagination.js"></script>
+        <script type="text/javascript">
+            
+            var contentMapper = new APIMaps();
+            var guardianAPI = new GuardianAPI('http://api.guardianapis.com', 'unh8vkqcmsxdyjrv886pb2md');
+            var pagination = new Pagination(25, 0, loadData);
+            
+            function init() {
+                loadData();
+            }
+
+            function loadData() {
+
+                var articles = document.getElementById('results');
+                while (articles.firstChild) {
+                    articles.removeChild(articles.firstChild);
+                }
+                
+                pagination.disableNav();
+            
+                // count and offset come from pagination.js, which should be a class but whatever
+                var args = {
+                    'callback': 'processSearchResults',
+                    'count': pagination.count,
+                    'start-index': pagination.offset
+                };
+            
+                var q = getRequestParameter('q');
+                if (q && q.length > 0) {
+                    document.getElementById("q").value = q;
+                    document.getElementById("query-text").innerHTML = '&#8216;'+q+'&#8217;';
+                    args['q'] = q;
+                }               
+                else {
+                    args['order-by-date'] = 'true';
+                    document.getElementById("query-text").innerHTML = 'Most recent articles';
+                }
+
+                var filter = getRequestParameter('filter');
+                if (filter && filter.length > 0) {
+                    document.getElementById("query-text").innerHTML = '&#8216;'+filter+'&#8217;';
+                    args['filter'] = filter;
+                }               
+                
+                // see http://api.guardianapis.com/content?api_key=unh8vkqcmsxdyjrv886pb2md for params
+                // TODO: getRequestParameter('before') and getRequestParameter('after') YYYYMMDD
+                // TODO: getRequestParameter('content-type') 'content-type': 'article'
+
+                // results info:
+                document.getElementById("result-info").style.display = 'block';
+                
+                // bunnies
+                document.getElementById("loading").style.display = 'block';
+                
+                doTheJSON(guardianAPI.getAPISearchURL(args));
+            }
+            
+            function processSearchResults(response) {
+                document.getElementById("loading").style.display = 'none';
+                if (response && response.search) {
+                    var results = response.search.results;
+                    if (results) {
+
+                        pagination.setTotal(response.search.count);                        
+                        pagination.paginate();
+                    
+                        var start = response.search.startIndex + 1;
+                        var end = start + results.length - 1;
+                        document.getElementById("result-count").innerHTML = addCommas(start) + '-' + addCommas(end) + 
+                                        ' of ' + addCommas(response.search.count) + ' results';
+                    
+                        var ids = [];
+                        var articles = document.getElementById('results');
+                        for (var i = 0; i < results.length; i++) {
+                            articles.appendChild(getNiceDOMBlobForResult(results[i], i % 2 != 0));
+                            ids.push(results[i].id);
+                        }
+                        
+                        doTheJSON(contentMapper.getPlaceSearchURL(ids.join(','), 'addPlacesToResults'));
+                        
+                        pagination.enableNav();
+                    }
+                    else {
+                        showDebugMessage('no results for search');
+                    }
+                }
+                else {
+                    showDebugMessage('no response for search');
+                }
+            }
+            
+            function getNiceDOMBlobForResult(result, odd) {
+
+                var template = '<h2>{headline} <a href="geocode.html?id={id}">Geocode This!<\/a><\/h2>' +
+                               '<p>{trailText}<\/p>' +
+                               '<p class="date">{date}<\/p>' +
+                               '<img src="images/2.gif"\/>';
+
+                var date = result["publicationDate"] ? parseDate(result["publicationDate"]) : null;
+
+                var prettyDate = date ? getPrettyDate(date) : 'Date Unknown';
+                
+                template = template.replace(/\{headline\}/, result['headline']);
+                template = template.replace(/\{trailText\}/, result['trailText']);
+                template = template.replace(/\{date\}/, prettyDate);
+                template = template.replace(/\{id\}/, result['id']);
+                
+                var div = document.createElement('div');
+                div.id = 'article'+result['id']
+                div.className = 'result';
+                if (odd) {
+                    div.className += ' odd';
+                }
+                div.innerHTML = template;                
+                return div;
+            }            
+            
+            function addPlacesToResults(response) {
+                if (response && response.points) {
+                    var placeList = response.points;
+                    var articlePlaces = {};
+                    for (var i = 0; i < placeList.length; i++) {
+                        var place = placeList[i];
+                        var articleDivId = 'article'+place.article_id;
+                        if (!articlePlaces[articleDivId]) {
+                            articlePlaces[articleDivId] = [];
+                        }
+                        articlePlaces[articleDivId].push(place.place_name);
+                    }
+                    for (var divId in articlePlaces) {
+                        var articleDiv = document.getElementById(divId);
+                        if (articleDiv) {
+                            var p = document.createElement('p');
+                            p.className = 'existing';
+                            p.appendChild(document.createTextNode('Already geocoded: ' + articlePlaces[divId].join(' | ')));
+                            var img = articleDiv.getElementsByTagName('img')[0];
+                            articleDiv.insertBefore(p, img);
+                            articleDiv.removeChild(img);
+                        }
+                    }
+                }
+                clearLoadingImages();
+            }
+            
+            function clearLoadingImages() {
+                var results = document.getElementById('results');
+                var images = results.getElementsByTagName('img');
+                for (var i = images.length-1; i >= 0; i--) {
+                    var img = images[i];
+                    var p = document.createElement('p');
+                    p.className = 'wanting';
+                    p.appendChild(document.createTextNode('No places known...'));
+                    img.parentNode.insertBefore(p, img);
+                    img.parentNode.removeChild(img);
+                }
+            }
+
+            function showDebugMessage(s) {
+                var debug = document.getElementById('debug');
+                var p = document.createElement('p');
+                p.appendChild(document.createTextNode(s));
+                debug.appendChild(p);
+            }
+            
+            window.onload = init;
+            
+        </script>
+    </head>
+    <body>
+        <div id="header">
+            <h1><a href="index.html">API Maps</a></h1>
+            <p>Putting the Guardian API on the Map</p>
+            <ul>
+                <li><a href="index.html">About</a></li>
+                <li><a href="search.html">Search</a></li>
+                <li><a href="map.html">Map</a></li>
+                <li><a href="data.html">Data</a></li>
+            </ul>
+        </div>
+        <div id="search">
+            <h2>Search</h2>        
+            <form id="articleform" method="get" action="search.html">
+                <label for="q">Query: </label>
+                <input type="text" id="q" name="q"></input>
+                <!--label for="content-type">Type: </label>
+                <select id="content-type" name="content-type">
+                    <option label="Article" value="article">Article</option>
+                    <option label="Audio" value="audio">Audio</option>
+                    <option label="Gallery" value="gallery">Gallery</option>
+                    <option label="Poll" value="poll">Poll</option>
+                </select-->
+                <input type="submit" value="Search"></input>
+                (try searching for places directly, e.g. <a href="search.html?q=London">London</a> or <a href="search.html?q=Paris">Paris</a>)
+            </form>
+        </div>
+        <div id="debug">
+            <p>(debug info goes here)</p>
+        </div>        
+        <div id="result-info">
+            <h2><span id="query-text"></span></h2>
+            <p><span id="result-count"></span> <a href="search.html">Clear this search</a></p>
+        </div>        
+        <div id="loading">
+            <!-- bunnies! http://mike.teczno.com/notes/bunnies.html -->
+            <p>Loading...<br><img src="images/6.gif"></p>
+        </div>        
+        <div id="results">
+            <!-- our javascript vomits into this bucket -->
+        </div>
+        <div id="pagination">
+            <p id="page-prev"><a href="#">Previous</a></p>
+            <p id="page-next"><a href="#">Next</a></p>
+            <p id="page-numbers">...</p>
+        </div>        
+        <div id="footer">
+            <p><img src="images/theguardian_colour.gif">News articles by <a href="http://www.guardian.co.uk">The Guardian</a>.
+            <br>Maps &copy 2009 <a href="http://www.cloudmade.com">CloudMade</a>, map data <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a> <a href="http://www.openstreetmap.org">OpenStreetMap.org</a> contributors.
+            <br>Place searching by <a href="http://www.flickr.com">Flickr</a>.               
+                Font reset by <a href="http://developer.yahoo.com/yui/fonts/">YUI</a>. 
+                Cheerleading by <a href="http://www.asklater.com/steve">SteveC</a>. 
+            <br>Design and code by <a href="http://www.stamen.com">Stamen Design</a>.</p>
+        </div>
+    </body>
+</html>
+    

@@ -1,0 +1,190 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+    "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+    <head>
+        <title>Guardian API Maps - Recently Geocoded Articles on a Map</title>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+        <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.7.0/build/reset/reset-min.css">
+        <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.7.0/build/fonts/fonts-min.css">
+        <link href="css/style.css" rel="stylesheet" type="text/css">
+        <script type="text/javascript" src="http://tile.cloudmade.com/wml/0.2/web-maps-lite.js"></script>
+        <script type="text/javascript" src="js/utils.js"></script>
+        <script type="text/javascript" src="js/apimaps.js"></script>
+        <script type="text/javascript" src="js/mapbits.js"></script>
+        <script type="text/javascript" src="js/flickr.js"></script>
+        <script type="text/javascript" src="js/guardian.js"></script>
+        <script type="text/javascript" src="js/pagination.js"></script>
+        <script type="text/javascript">
+            
+            var contentMapper = new APIMaps();
+            var pagination = new Pagination(5, 0, loadData);
+            
+            function init() {
+                initMap(0,0,1);
+                loadData();
+            }
+            
+            function loadData() {
+            
+                pagination.disableNav();
+                clearMarkers();
+                clearResults();
+
+                document.getElementById('loading').style.display = 'block';
+            
+                var place = getRequestParameter('place');
+                if (place && place.length > 0) {
+                    document.getElementById("place").value = place;
+                    doTheJSON(getFlickrPlaceFindURL(place)); // --> jsonFlickrApi
+                }
+                else {
+                    // count and offset come from pagination.js, which should be a class but whatever
+                    // ask points.php what places we have
+                    doTheJSON(contentMapper.getPlaceURL({
+                        'callback': 'addExistingPlaces',
+                        'count': pagination.count,
+                        'offset': pagination.offset
+                    }));
+                }
+            }
+            
+            function jsonFlickrApi(rsp) {
+                if (rsp && rsp.places && rsp.places.place) {
+                    var placeList = rsp.places.place;
+                    if (placeList.length > 0) {
+                        var place = placeList[0];
+                        doTheJSON(contentMapper.getPlaceURL({
+                            'callback': 'addExistingPlaces',
+                            'count': pagination.count,
+                            'offset': pagination.offset,
+                            'woe': place.woeid
+                        }));
+                    }
+                    else {
+                        document.getElementById('loading').style.display = 'none';            
+                        document.getElementById("result-info").style.display = 'block';
+                        document.getElementById("result-count").innerHTML = document.getElementById("place").value + ' not found, sorry.';
+                    }
+                }
+            }
+            
+            function clearResults() {
+                var results = document.getElementById('results');
+                while (results.firstChild) {
+                    results.removeChild(results.firstChild);
+                }
+            }
+            
+            function addExistingPlaces(response) {
+                document.getElementById('loading').style.display = 'none';            
+                if (response && response.points) {
+                    
+                    pagination.setTotal(response.total);
+                    
+                    document.getElementById("result-info").style.display = 'block';
+                    document.getElementById("result-count").innerHTML = 'page ' + pagination.pageNum + " / " + pagination.numPages;
+                    
+                    var results = document.getElementById('results');
+                    var placeList = response.points;
+                    for (var i = 0; i < placeList.length; i++) {
+                        var place = placeList[i];
+                        addMarkerForPlace(place.place_name, place.woe_id, parseFloat(place.latitude), parseFloat(place.longitude));
+                        results.appendChild(getNiceDOMBlobForPlace(place));
+                    }
+                    showAllMarkers();
+                }
+                else {
+                    document.getElementById("result-info").style.display = 'block';
+                    document.getElementById("result-count").innerHTML = 'no matches for that place';
+                }
+                pagination.enableNav();
+                pagination.paginate();
+            }
+
+            function getNiceDOMBlobForPlace(place) {
+
+                var template = '<h2>{title}<\/h2>' +
+                               '<p class="date">{date}<\/p>' +
+                               '<p><a href="{url}">read full article<\/a><\/p>';
+                               // TODO: this doesn't make sense until we group things by article in this list
+                               //'<p><a href="geocode.html?id={id}">Add more places &rarr;<\/a><\/p>';
+                
+                var date = place.article.published ? parseDate(place.article.published) : null;
+
+                var prettyDate = date ? getPrettyDate(date) : 'Date Unknown';
+                
+                template = template.replace(/\{title\}/, place.article.title);
+                template = template.replace(/\{url\}/, place.article.url);
+                template = template.replace(/\{date\}/, prettyDate);
+                
+                var div = document.createElement('div');
+                div.id = 'article'+place.article.id;
+                div.className = 'result';
+                div.innerHTML = template;                
+                return div;
+            }  
+
+            function showDebugMessage(s) {
+                var debug = document.getElementById('debug');
+                var p = document.createElement('p');
+                p.appendChild(document.createTextNode(s));
+                debug.appendChild(p);
+            }
+            
+            window.onload = init;
+            
+        </script>
+    </head>
+    <body>
+        <div id="header">
+            <h1><a href="index.html">API Maps</a></h1>
+            <p>Putting the Guardian API on the Map</p>
+            <ul>
+                <li><a href="index.html">About</a></li>
+                <li><a href="search.html">Search</a></li>
+                <li><a href="map.html">Map</a></li>
+                <li><a href="data.html">Data</a></li>
+            </ul>
+        </div>
+        <div id="search">
+            <h2>Map</h2>
+            <form id="articleform" method="get" action="map.html">
+                <label for="q">Search The Map: </label>
+                <input type="text" id="place" name="place"></input>
+                <input type="submit" value="Go!"></input>
+            </form>
+        </div>
+        
+        <div id="debug">
+            <p>(debug info goes here)</p>
+        </div>
+        <div id="loading">
+            <!-- bunnies! http://mike.teczno.com/notes/bunnies.html -->
+            <p>Loading...<br><img src="images/6.gif"></p>
+        </div>
+        <div id="big-map-container">
+            <div id="map">
+                <!-- CloudMade's javascript vomits into this bucket -->
+            </div>
+            <div id="result-info">
+                <p><span id="result-count"></span></p>
+            </div>
+            <div id="results">
+                <!-- our javascript vomits into this bucket -->
+            </div>
+            <div id="pagination">
+                <p id="page-prev"><a href="#">Previous</a></p>
+                <p id="page-next"><a href="#">Next</a></p>
+                <p id="page-numbers">...</p>
+            </div>
+        </div>
+        <div id="footer">
+            <p><img src="images/theguardian_colour.gif">News articles by <a href="http://www.guardian.co.uk">The Guardian</a>.
+            <br>Maps &copy 2009 <a href="http://www.cloudmade.com">CloudMade</a>, map data <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a> <a href="http://www.openstreetmap.org">OpenStreetMap.org</a> contributors.
+            <br>Place searching by <a href="http://www.flickr.com">Flickr</a>.               
+                Font reset by <a href="http://developer.yahoo.com/yui/fonts/">YUI</a>. 
+                Cheerleading by <a href="http://www.asklater.com/steve">SteveC</a>. 
+            <br>Design and code by <a href="http://www.stamen.com">Stamen Design</a>.</p>
+        </div>
+    </body>
+</html>

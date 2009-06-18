@@ -1,0 +1,384 @@
+/* see http://developer.yahoo.com/yui/fonts/#using for font size rationale */
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #fff;
+    color: #000;
+}
+
+/* TODO: replace this with a class? */
+#header, #footer, #search, #loading, #article-container, #content,
+#big-map-container, #debug, #results, #result-info, #pagination {
+    clear: both;
+    margin-left: 50px;
+    margin-right: 50px;
+}
+
+/***********************/
+
+a, a:link {
+    color: #005689;
+    text-decoration: none;    
+}
+
+a:visited {
+    color: #560089;
+}
+
+a:hover, a:active {
+    text-decoration: underline;
+}
+
+/***********************/
+
+#header {
+    padding-top: 35px;
+    padding-bottom: 32px;
+}
+
+#header h1 {
+    font-weight: bold;
+    margin-right: 0.5em;
+}
+
+#header h1, #header p {
+    float: left;
+}
+
+#header ul {
+    float: right;
+    list-style-type: none;    
+}
+
+#header ul li {
+    display: inline;
+}
+
+#header ul li a {
+    font-weight: bold;
+    margin: 0 0 0 1em;
+}
+
+/***********************/
+
+#search {
+    clear:both;
+    display:block;
+    margin-top: 10px;
+}
+
+#search h2 {
+    font-size: 246%;
+    font-weight: bold;
+    margin-right: 20px;
+    clear: left;
+    float: left;
+}
+
+#search form {
+    font-size: 100%;
+    line-height: 296%;
+    padding-top: 5px;
+}
+
+#search label, #search input {
+    margin-left: 5px;
+    margin-bottom: 10px;
+}
+
+#search {
+    border-bottom: 10px solid #000;
+    margin-bottom: 20px;
+}
+
+/***********************/
+
+#result-info {
+    margin-bottom: 20px;
+    margin-top: 20px;
+}
+
+#result-info h2 {
+    font-size: 182%;
+    margin-bottom: 5px;
+}
+
+#result-info p {
+    color: #888;
+    font-size: 123.1%;
+    padding: 5px 0;
+    border-top: 1px dotted #000;
+    border-bottom: 1px dotted #000;
+}
+
+/***********************/
+
+#results div.result {
+    margin-bottom: 0px;
+    padding: 10px 0;
+}
+
+#results div.odd {
+    border-top: 1px dotted #ccc;
+    border-bottom: 1px dotted #ccc;
+}
+
+#results h2 {
+    font-size: 123.1%;    
+}
+
+#results p {
+    color: #888;
+}
+
+#results p.date {
+    color: #000;
+}
+
+#results p.existing {
+    font-style: italic;
+    color: #080;
+}
+
+#results p.wanting {
+    font-style: italic;
+    color: #800;
+}
+
+#results h2 a {
+    font-size: 85%;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding-right: 22px;
+    padding-left: 5px;
+    background-image: url('../images/rarr.png');
+    background-repeat: no-repeat;
+    background-position: right;
+}
+
+/***********************/
+
+#pagination {
+    padding: 5px 0;
+    border-top: 1px dotted #000;
+    border-bottom: 1px dotted #000;  
+    margin-bottom: 20px;    
+}
+
+#pagination p#page-numbers {
+    text-align: center;
+}
+
+#pagination p#page-next {
+    float: right;
+}
+#pagination p#page-prev {
+    float: left;
+}
+
+/***********************/
+
+#footer {
+    border-top: 10px solid #000;
+    padding: 15px 0;
+    font-size: 85%;
+    color: #888;
+    margin-top: 20px;
+}
+
+#footer p img {
+    float: right;
+    margin-left: 5px;
+}
+
+/***********************/
+
+#article-container {
+    margin-top: 20px;
+}
+
+#map-container {
+    float: right;
+    width: 50%;
+    margin: 0;
+    border: 0;
+}
+
+#article {
+    width: 48%;
+}
+
+#map-container #map {
+    width: 100%;
+    height: 300px;
+}
+
+#places {
+    margin-top: 10px;
+}
+
+#places p {
+    margin: 5px 0;
+}
+
+#places p.example {
+    font-size: 85%;
+    color: #888;
+    display: inline;
+}
+
+#places p.example em {
+    font-style: italic;
+}
+
+#places p img {
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+#places h2 {
+    font-size: 123.1%;
+    margin-bottom: 5px;
+}
+
+#places input {
+    margin-right: 5px;
+}
+
+/***********************/
+
+#article h2 {
+    font-size: 197%;    
+    margin-bottom: 2px;
+    padding-top: 5px;
+    border-top: 1px solid #000;
+}
+
+#article h3 {
+    color: #888;
+    font-size: 123.1%;
+    margin-bottom: 35px;
+}
+
+#article p.byline {
+    color: #000;
+    padding-top: 5px;
+    border-top: 1px solid #000;
+}
+
+#article p.date {
+    color: #000;
+}
+
+#article p.tags {
+    margin: 20px 0px;
+}
+
+#article p.body {
+    padding-top: 5px;
+    padding-right: 5px;
+    border-top: 1px solid #000;
+    height: 300px;
+    overflow: auto;
+}
+
+/***********************/
+
+#big-map-container #map {
+    width: 50%;
+    height: 400px;
+    float: right;
+    margin: 0 0 20px 0;
+}
+
+#big-map-container #pagination, #big-map-container #results, #big-map-container #result-info {
+    width: 48%;
+    clear: none;
+    margin: 0 0 20px 0;
+}
+
+
+/***********************/
+
+#content h2 {
+    font-size: 123.1%;
+    font-weight: bold;
+    margin-top: 30px;
+    margin-bottom: 10px;
+}
+
+#content h3 {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+#content h4 {
+    margin-bottom: 10px;
+}
+
+#content pre {
+    background-color: #eee;
+    margin: 10px 0;
+}
+
+#content dl, #content ul, #content p {
+    margin-bottom: 10px;
+}
+
+#content dd {
+    margin-left: 40px;
+}
+
+#content ul li {
+    margin-left: 30px;
+    list-style-type: disc;
+}
+
+#content p#getstarted a {
+    display: block;
+    font-size: 123.1%;
+    font-weight: bold;    
+    padding: 15px;
+    margin: 25px 25%;
+    border: 1px dotted #afa;
+    background-color: #efe;
+    text-align: center;
+}
+
+/***********************/
+
+#page-numbers a, #page-numbers span {
+    padding: 0 0.5em;
+}
+
+#page-numbers span {
+    font-weight: bold;
+}
+
+/***********************/
+
+#debug {
+    display: none;
+    clear: left;
+    background-color: #ff8;
+    padding: 20px;
+}
+
+#map-container, #result-info, #loading {
+    display: none;
+}
+
+/* #loading {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    top: 50%;
+    background-color: #fff;
+    padding: 10px;
+    margin: 0;
+    margin-left: -40px;    
+    margin-top: -40px;    
+    border: 1px solid #000;
+} */

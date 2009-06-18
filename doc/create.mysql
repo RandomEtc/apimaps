@@ -1,0 +1,70 @@
+DROP TABLE IF EXISTS points;
+
+CREATE TABLE points (
+
+    article_id  INT UNSIGNED NOT NULL,
+    woe_id      INT UNSIGNED NOT NULL,
+
+    latitude    DOUBLE,
+    longitude   DOUBLE,
+    
+    # flickr
+    place_id    VARCHAR(32) NOT NULL,
+    place_path  VARCHAR(128),
+    place_type  VARCHAR(16),
+    place_name  VARCHAR(255),
+    
+    # who and when?
+    visitor_id  VARCHAR(16) NOT NULL,
+    remote_addr VARCHAR(15),
+    created     TIMESTAMP,
+    
+    PRIMARY KEY (article_id, woe_id),
+    INDEX place_id (place_id),
+    INDEX place_path (place_path),
+    INDEX location (latitude, longitude)
+
+) ENGINE=InnoDB, CHARACTER SET utf8;
+
+
+
+DROP TABLE IF EXISTS articles;
+
+CREATE TABLE articles (
+
+    id          INT UNSIGNED NOT NULL PRIMARY KEY,
+    
+    # guardian
+    title       TEXT,
+    published   DATE,
+    url         VARCHAR(128),
+    
+    # derived from points table
+    point_count INT UNSIGNED DEFAULT 0
+
+) ENGINE=InnoDB, CHARACTER SET utf8;
+
+
+
+DROP TABLE IF EXISTS visitors;
+
+CREATE TABLE visitors (
+
+    id          VARCHAR(16) NOT NULL PRIMARY KEY
+    
+    # presumably this gets expanded into a real users table at some later date
+
+) ENGINE=InnoDB, CHARACTER SET utf8;
+
+
+
+DROP TABLE IF EXISTS log;
+
+CREATE TABLE log (
+
+    visitor_id  VARCHAR(16) NOT NULL,
+    remote_addr VARCHAR(15),
+    logged      TIMESTAMP,
+    message     VARCHAR(128)
+
+) ENGINE=InnoDB, CHARACTER SET utf8;
