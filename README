@@ -2,4 +2,16 @@ This is the BSD-licensed code that powers http://guardian.apimaps.org/
 
 It keeps associations between Guardian article IDs and Yahoo GeoPlanet IDs.
 
+You'll need a Flickr API key and a Guardian API key to get started.
+
+Guardian key goes in:
+ - lib/init.php line 7
+ - www/geocode.html line 20
+ - www/search.html line 17
+
+Flickr key goes in:
+ - lib/init.php line 8
+ - www/js/flickr.js line 12
+
 There's some hairy javascript and some hairy php here. It was made by Stamen Design.
+

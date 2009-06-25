@@ -14,7 +14,7 @@
         <script type="text/javascript">
             
             var contentMapper = new APIMaps();
-            var guardianAPI = new GuardianAPI('http://api.guardianapis.com', 'unh8vkqcmsxdyjrv886pb2md');
+            var guardianAPI = new GuardianAPI('http://api.guardianapis.com', 'YOUR KEY HERE');
             var pagination = new Pagination(25, 0, loadData);
             
             function init() {
@@ -54,7 +54,7 @@
                     args['filter'] = filter;
                 }               
                 
-                // see http://api.guardianapis.com/content?api_key=unh8vkqcmsxdyjrv886pb2md for params
+                // see http://api.guardianapis.com/content?api_key=YOUR_KEY_HERE for params
                 // TODO: getRequestParameter('before') and getRequestParameter('after') YYYYMMDD
                 // TODO: getRequestParameter('content-type') 'content-type': 'article'
 
